@@ -69,7 +69,7 @@ pub fn Stack(comptime T: type, comptime N: usize) type {
         }
 
         pub inline fn push_safe(self: *Self, item: T) !void {
-            if (self.len == self.capacity) return error.NoCapacity;
+            if (self.is_full()) return error.NoCapacity;
             self.items[self.len] = item;
             self.len += 1;
         }
@@ -110,6 +110,10 @@ pub fn Stack(comptime T: type, comptime N: usize) type {
 
         pub inline fn is_empty(self: *const Self) bool {
             return self.len == 0;
+        }
+
+        pub fn is_full(self: Self) bool {
+            return self.len == self.capacity;
         }
 
         pub inline fn iterator(self: *const Self) StackIterator(T) {
@@ -180,6 +184,15 @@ fn StackIterator(comptime T: type) type {
             return self.items[self.index];
         }
     };
+}
+
+test "stack is_full" {
+    var stack: Stack(usize, 3) = .{};
+    stack.push(1);
+    stack.push(2);
+    try testing.expect(!stack.is_full());
+    stack.push(3);
+    try testing.expect(stack.is_full());
 }
 
 test "stack push and pop" {
