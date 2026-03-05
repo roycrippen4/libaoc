@@ -19,15 +19,21 @@ test "stack is_primitive_type" {
 pub fn Stack(comptime T: type, comptime N: usize) type {
     return struct {
         /// Number of items currently used by the stack
-        len: usize = 0,
+        len: usize,
 
         /// Underlying data inside the stack
-        items: [N]T = undefined,
+        items: [N]T,
 
         /// Total capacity for this stack
-        capacity: usize = N,
+        capacity: usize,
 
         const Self = @This();
+
+        pub const empty: Self = .{
+            .len = 0,
+            .items = undefined,
+            .capacity = N,
+        };
 
         /// Fills out the backing array with a default value.
         /// Does not change the length of the backing array or the pointer to the first element.
