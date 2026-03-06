@@ -177,7 +177,7 @@ pub const Part = enum {
 };
 
 pub const Solver = struct {
-    f: fn (Allocator) anyerror!usize,
+    f: *const fn (Allocator) anyerror!usize,
     expected: usize,
 };
 
@@ -195,7 +195,7 @@ pub const Solution = struct {
 
 pub fn validate(
     allocator: Allocator,
-    f: fn (Allocator) anyerror!usize,
+    f: *const fn (Allocator) anyerror!usize,
     expected: usize,
     d: Day,
     p: Part,
