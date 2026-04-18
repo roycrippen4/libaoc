@@ -1,7 +1,8 @@
 const std = @import("std");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
-const Writer = std.io.Writer;
+const Io = std.Io;
+const Writer = Io.Writer;
 
 pub const char = @import("char.zig");
 pub const Deque = @import("deque.zig").Deque;
@@ -195,14 +196,15 @@ pub const Solution = struct {
 
 pub fn validate(
     allocator: Allocator,
+    io: Io,
     f: *const fn (Allocator) anyerror!usize,
     expected: usize,
     d: Day,
     p: Part,
 ) !u64 {
-    const start: std.time.Instant = try .now();
+    const start: std.Io.Timestamp = try .now(io, .real);
     const result = try f(allocator);
-    const end: std.time.Instant = try .now();
+    const end: std.Io.Timestamp = try .now(io, .real);
     const elapsed = end.since(start);
 
     if (result != expected) {
@@ -227,5 +229,13 @@ pub fn validate(
 }
 
 test {
-    @import("std").testing.refAllDeclsRecursive(@This());
+    _ = @import("char.zig");
+    _ = @import("deque.zig").Deque;
+    _ = @import("direction.zig");
+    _ = @import("grid.zig").Grid;
+    _ = @import("math.zig");
+    _ = @import("point.zig");
+    _ = @import("slice.zig");
+    _ = @import("stack.zig").Stack;
+    _ = @import("time.zig");
 }

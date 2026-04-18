@@ -2,7 +2,7 @@
     .name = .libaoc,
     .version = "0.3.0",
     .fingerprint = 0xb432a2ab2bc40597,
-    .minimum_zig_version = "0.15.2",
+    .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",
