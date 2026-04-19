@@ -178,7 +178,7 @@ pub const Part = enum {
 };
 
 pub const Solver = struct {
-    f: *const fn (Allocator) anyerror!usize,
+    f: *const fn (Allocator, Io) anyerror!usize,
     expected: usize,
 };
 
@@ -187,9 +187,9 @@ pub const Solution = struct {
     p2: Solver,
     day: Day,
 
-    pub fn solve(self: @This(), allocator: Allocator) !u64 {
-        const p1_time = try validate(allocator, self.p1.f, self.p1.expected, self.day, .one);
-        const p2_time = try validate(allocator, self.p2.f, self.p2.expected, self.day, .two);
+    pub fn solve(self: @This(), allocator: Allocator, io: Io) !u64 {
+        const p1_time = try validate(allocator, io, self.p1.f, self.p1.expected, self.day, .one);
+        const p2_time = try validate(allocator, io, self.p2.f, self.p2.expected, self.day, .two);
         return p1_time + p2_time;
     }
 };
@@ -197,15 +197,15 @@ pub const Solution = struct {
 pub fn validate(
     allocator: Allocator,
     io: Io,
-    f: *const fn (Allocator) anyerror!usize,
+    f: *const fn (Allocator, Io) anyerror!usize,
     expected: usize,
     d: Day,
     p: Part,
 ) !u64 {
-    const start: std.Io.Timestamp = try .now(io, .real);
-    const result = try f(allocator);
-    const end: std.Io.Timestamp = try .now(io, .real);
-    const elapsed = end.since(start);
+    const start: std.Io.Timestamp = .now(io, .real);
+    const result = try f(allocator, io);
+    const end: std.Io.Timestamp = .now(io, .real);
+    const elapsed = start.durationTo(end);
 
     if (result != expected) {
         std.debug.print(
@@ -223,9 +223,10 @@ pub fn validate(
     }
 
     var buf: [64]u8 = undefined;
-    const time_str = try time.color(elapsed, &buf);
+    const nanos = elapsed.nanoseconds;
+    const time_str = try time.color(nanos, &buf);
     std.debug.print("{f} {f} solved in {s}\n", .{ d, p, time_str });
-    return elapsed;
+    return @as(u64, @intCast(nanos));
 }
 
 test {

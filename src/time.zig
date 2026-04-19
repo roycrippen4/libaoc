@@ -9,7 +9,7 @@ pub const Unit = enum {
     @"µs",
     nanos,
 
-    pub fn from_ns(ns: u64) Unit {
+    pub fn from_ns(ns: i96) Unit {
         const time = as_secs(ns);
         if (time > 1.0) return .secs;
         if (time > 0.1) return .ms_s;
@@ -21,41 +21,44 @@ pub const Unit = enum {
     }
 };
 
-fn as_secs(ns: u64) f64 {
+fn as_secs(ns: i96) f64 {
     const ns_f: f64 = @floatFromInt(ns);
     const ns_per_s_f: f64 = @floatFromInt(std.time.ns_per_s);
     return ns_f / ns_per_s_f;
 }
 
-fn as_millis(ns: u64) f64 {
+fn as_millis(ns: i96) f64 {
     const ns_f: f64 = @floatFromInt(ns);
     const ns_per_ms_f: f64 = @floatFromInt(std.time.ns_per_ms);
     return ns_f / ns_per_ms_f;
 }
 
-fn as_micros(ns: u64) f64 {
+fn as_micros(ns: i96) f64 {
     const ns_f: f64 = @floatFromInt(ns);
     const ns_per_us_f: f64 = @floatFromInt(std.time.ns_per_us);
     return ns_f / ns_per_us_f;
 }
 
-/// Convenience wrapper around `std.time.Instant`
+/// Convenience wrapper around `std.Io.Timestamp`
 pub const Stopwatch = struct {
-    _start: ?std.time.Instant = null,
+    timestamp: ?std.Io.Timestamp = null,
+    io: ?std.Io = null,
     label: ?[]const u8 = null,
 
     const Self = @This();
 
-    pub fn start(self: Self) Self {
+    pub fn start(self: Self, io: std.Io) Self {
         return .{
-            ._start = std.time.Instant.now() catch unreachable,
+            .timestamp = .now(io, .awake),
+            .io = io,
             .label = self.label,
         };
     }
 
     pub fn with_label(self: Self, label: []const u8) Self {
         return .{
-            ._start = self._start,
+            .timestamp = self.timestamp,
+            .io = self.io,
             .label = label,
         };
     }
@@ -63,9 +66,8 @@ pub const Stopwatch = struct {
     pub fn stop(self: *const Self) void {
         var buf: [64]u8 = undefined;
 
-        const now = std.time.Instant.now() catch unreachable;
-        const elapsed = now.since(self._start.?);
-        const timestr = color(elapsed, &buf) catch unreachable;
+        const elapsed = self.timestamp.?.untilNow(self.io.?, .awake);
+        const timestr = color(elapsed.nanoseconds, &buf) catch unreachable;
 
         if (self.label) |label| {
             std.debug.print("[{s}]: Time taken: {s}\n", .{ label, timestr });
@@ -74,11 +76,12 @@ pub const Stopwatch = struct {
         }
     }
 }{
-    ._start = null,
+    .timestamp = null,
+    .io = null,
     .label = null,
 };
 
-pub fn color(ns: u64, buf: []u8) ![]u8 {
+pub fn color(ns: i96, buf: []u8) ![]u8 {
     // zig fmt: off
     return try switch (Unit.from_ns(ns)) {
         .secs  => bprint(buf, "\x1b[38;2;255;0;0m{d:.3}s\x1b[0m"   , .{as_secs(ns)}),
